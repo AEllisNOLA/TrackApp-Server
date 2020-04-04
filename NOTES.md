@@ -68,3 +68,37 @@ mongoose.connection.on('error', () => {
 "dev":"nodemon src/index.js"
 `
 
+## 3) Set up Authentication Routes
+1) Create a *routes* folder and add *authRoutes.js*. Require *Express*. This is where request handling logic for authentication will reside.
+
+2) Use *Express* to create a *router* to associate with the *route handlers* to be created.
+
+3) Create a route handler with req and res objects as objects.
+
+4) Export the *router*.
+
+`
+const express = require('express')
+
+// Create router to associate with the route handlers to be created
+const router = express.Router()
+
+// Route Handlers
+router.post('/signup', (req, res) => {
+    res.send("You made a POST request")
+})
+
+module.exports = router;
+`
+
+5) In *Index.js*, require authRoutes.js*. Then use it immediately after creating the *app*, associate the authRoutes with the app.
+
+`
+// Create instance of Express
+const app = express()
+
+// Associate request handlers in router with Express app
+app.use(authRoutes)
+`
+
+6) Test in *Postman* to make sure you are receiving "You made a POST request" when you make a POST request to localhost:3000/signup.
