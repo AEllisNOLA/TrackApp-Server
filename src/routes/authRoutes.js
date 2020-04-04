@@ -5,6 +5,7 @@ const router = express.Router()
 
 // Route Handlers
 router.post('/signup', (req, res) => {
+    console.log(req.body)
     res.send("You made a POST request")
 })
 

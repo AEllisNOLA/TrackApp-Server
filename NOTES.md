@@ -102,3 +102,44 @@ app.use(authRoutes)
 `
 
 6) Test in *Postman* to make sure you are receiving "You made a POST request" when you make a POST request to localhost:3000/signup.
+
+## 4) Making Express Handle JSON
+1) *Express* does not readily handle JSON.  For this, use a third-party library called *body-parser*. Require it at the top of *index.js* with *const bodyParser = require('body-parser')*. Then use it after creating the *Express app*, but before associating the *Express app* with *authRoutes*.
+
+Parsed data will be placed on the body of req within the route handlers.
+
+`
+// Create instance of Express
+const app = express()
+
+// Allow Express app to handle JSON
+app.use(bodyParser.json())
+
+// Associate request handlers in router with Express app
+app.use(authRoutes)
+`
+
+## 5) Defining Schemas
+1) Mongoose needs to know what data is in MongoDB through the creation of *models*. Add a new directory in *src* called *models* and add *User.js*. Require *mongoose*.
+
+2) Create a schema. Example: 
+
+`
+const userSchema = new mongoose.Schema({
+    email: {
+        type: String,
+        unique: true,
+        required: true
+    },
+    password: {
+        type: String,
+        required: true
+    }
+})
+`
+
+3) Associate the schema with Mongoose. First argument is what it will be called throughout the app, and the second is the schema that was created.
+
+`
+mongoose.model('User', userSchema)
+`

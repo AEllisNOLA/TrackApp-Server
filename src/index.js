@@ -1,12 +1,15 @@
 const express = require('express')
 const mongoose = require('mongoose')
+const bodyParser = require('body-parser')
 
 require('dotenv').config()
 const authRoutes = require('./routes/authRoutes')
 
-
 // Create instance of Express
 const app = express()
+
+// Allow Express app to handle JSON
+app.use(bodyParser.json())
 
 // Associate request handlers in router with Express app
 app.use(authRoutes)
