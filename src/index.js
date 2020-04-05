@@ -1,9 +1,11 @@
+require('./models/User')
 const express = require('express')
 const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
 
 require('dotenv').config()
 const authRoutes = require('./routes/authRoutes')
+const requireAuth = require('./middlewares/requireAuth')
 
 // Create instance of Express
 const app = express()
@@ -31,11 +33,11 @@ mongoose.connection.on('error', () => {
     console.error("Error Connecting to Mongo Instance", err)
 })
 
-/*
-app.get('/', (req, res) => {
-    res.send("Hello, World!")
+
+app.get('/', requireAuth, (req, res) => {
+    res.send(`${req.user.email}`)
 })
-*/
+
 
 // Listening on port 3000
 app.listen(3000, () => {
