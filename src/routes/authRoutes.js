@@ -9,7 +9,6 @@ const User = mongoose.model('User')
 const router = express.Router()
 
 // Route Handlers
-/* NOTE: Will change the storing of passwords later */
 router.post('/signup', async (req, res) => {
     // Pull data off req.body property
     const { email, password } = req.body
@@ -28,6 +27,33 @@ router.post('/signup', async (req, res) => {
     } catch (err) {
         // Failed attempt. Send back error message
         return res.status(422).send(err.message)
+    }
+})
+
+router.post('/signin', async (req, res) => {
+    // Pull data off req.body property
+    const { email, password } = req.body
+    // make sure email/password are provided
+    if (!email || !password) {
+        return res.status(422).send({ error: 'Please provide email and password.' })
+    }
+    // Find a person with that email
+    const user = await User.findOne({ email })
+
+    // Error if email not found in database
+    if (!user) {
+        return res.status(404).send({ error: 'Invalid password or email. 😞' })
+    }
+
+    // Compare passwords
+    try {
+        await user.comparePassword(password)
+        // If match, generate JSON Web Token
+        const token = jwt.sign({userId: user._id}, `${process.env.JWT_TOKEN_KEY}`)
+        // Send token as response
+        res.send({ token })
+    } catch (err) {
+        return res.status(422).send({error: 'Invalid password or email. 😞'})
     }
 })
 

@@ -184,10 +184,12 @@ router.post('/signup', async (req, res) => {
         // Failed attempt. Send back error message
         return res.status(422).send(err.message)
     }
+
 })
 `
 
 ## 6) Incorporating JSON Web Tokens
+
 1) In *authRoutes.js*, *const jwt = require('jsonwebtoken')* at the top. In addition, add *require('dotenv').config()* to hide the secret key you create with the token.
 
 2) Create a token, passing in two arguments: the first is the information the token will carry, and the second is a secret key.
@@ -195,13 +197,15 @@ router.post('/signup', async (req, res) => {
 The new *try* block will look like: 
 `
 // Create new user with those properties
+
         const user = new User({ email, password })
         // Save that user, giving the API time using Async-Await
         await user.save()
         // Create token. First argument is info for the token to carry. Second argument is a secret key
-        const token = jwt.sign({ userId: user._id }, `${process.env.JWT_TOKEN_KEY}`)
+        const token = jwt.sign({ userId: user._id }, `${process.env.JWT_TOKEN_KEY}` )
         // Send token
         res.send({ token })
+
 `
 
 3) Now to verify the token belongs to the user. In *src*, create a directory called *middlewares* and create *requireAuth.js*. Require *Express*, *Mongoose*, and *jsonwebtoken*. Your tokens secret key will be needed, so also require *require('dotenv').config()*.
@@ -210,6 +214,7 @@ The new *try* block will look like:
 
 `
 module.exports = (req, res, next) => {
+
     // Pull off authorization header. It is lower-case here, upper-case in Postman. Express automatically lowers headers.
     const { authorization } = req.headers
 
@@ -240,7 +245,9 @@ module.exports = (req, res, next) => {
 
         // Finished, move on to next middleware if there is one
         next()
+
     })
+
 }
 `
 
@@ -248,8 +255,110 @@ module.exports = (req, res, next) => {
 
 `
 app.get('/', requireAuth, (req, res) => {
-    res.send(`${req.user.email}`)
+
+    res.send( `${req.user.email}` )
+
 })
 `
 
 6) Test in *Postman*. Make a GET request to localhost:3000 with Headers of *Authorization: Bearer JSONWEBTOKEN*. You should get athe proper email back. Make the JSONWEBTOKEN invalid to make sure error throws.
+
+## 7) Password Hashing/Salting
+
+1) In *User.js*, create a pre-save hook to salt and hash password.
+
+`
+// Use old-school keyword function so that "this" means the user instance
+userSchema.pre('save', function (next) {
+
+    const user = this
+
+    // If user did not modify their password, don't worry about it
+    if (!user.isModified('password')) {
+        return next()
+    }
+    // Generate salt
+    bcrypt.genSalt(10, (err, salt) => {
+        // If error, move on to next middleware but include the error message
+        if (err) {
+            return next(err)
+        }
+        // Then hash user password + salt
+        bcrypt.hash(user.password, salt, (err, hash) => {
+            // If error, move on to next middleware but include the error message
+            if (err) {
+                return next(err)
+            }
+            // user password replace with hash/salted password
+            user.password = hash
+            next()
+        })
+
+    })
+
+})
+`
+
+2) Compare the password a user gives with the hashed password. Rather than putting this in a request handler, it makes more sense to keep in the User model.
+
+`
+// Compare passwords
+userSchema.methods.comparePassword = function (candidatePassword) {
+
+    const user = this
+
+    // Using Promise because BCRYPT does not use Async-Await.
+    return new Promise((resolve, reject) => {
+        bcrypt.compare(candidatePassword, user.password, (err, isMatch) => {
+            // if error, reject promise
+            if (err) {
+                return reject(err)
+            }
+            // if passwords don't match
+            if (!isMatch) {
+                return reject(false)
+            }
+
+            // passwords match
+            resolve(true)
+        })
+
+    })
+
+}
+`
+
+3) Create the sign-in route in *authRoute.js*.
+
+`
+router.post('/signin', async (req, res) => {
+
+    // Pull data off req.body property
+    const { email, password } = req.body
+
+    // make sure email/password are provided
+    if (!email || !password) {
+        return res.status(422).send({ error: 'Please provide email and password.' })
+    }
+    // Find a person with that email
+    const user = await User.findOne({ email })
+
+    // Error if email not found in database
+    if (!user) {
+        return res.status(404).send({ error: 'Invalid password or email. 😞' })
+    }
+
+    // Compare passwords
+    try {
+        await user.comparePassword(password)
+        // If match, generate JSON Web Token
+        const token = jwt.sign({userId: user._id}, `${process.env.JWT_TOKEN_KEY}` )
+        // Send token as response
+        res.send({ token })
+    } catch (err) {
+        return res.status(422).send({error: 'Invalid password or email. 😞'})
+    }
+
+})
+`
+
