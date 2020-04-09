@@ -1,5 +1,7 @@
 const mongoose = require('mongoose')
+const uniqueValidator = require('mongoose-unique-validator')
 const bcrypt = require('bcrypt')
+
 
 // Create schema
 const userSchema = new mongoose.Schema({
@@ -62,6 +64,8 @@ userSchema.methods.comparePassword = function (candidatePassword) {
         })
     })
 }
+
+userSchema.plugin(uniqueValidator)
 
 // Associate model with Mongoose. 1st arg is what it will be called, 2nd is the object created above.
 mongoose.model('User', userSchema)

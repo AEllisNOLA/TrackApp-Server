@@ -1,10 +1,12 @@
 require('./models/User')
+require('./models/Track')
 const express = require('express')
 const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
 
 require('dotenv').config()
 const authRoutes = require('./routes/authRoutes')
+const trackRoutes = require('./routes/trackRoutes')
 const requireAuth = require('./middlewares/requireAuth')
 
 // Create instance of Express
@@ -15,6 +17,7 @@ app.use(bodyParser.json())
 
 // Associate request handlers in router with Express app
 app.use(authRoutes)
+app.use(trackRoutes)
 
 // Connect to MongoDB via Mongoose
 mongoose.connect(process.env.MONGO_URI, {
@@ -29,7 +32,7 @@ mongoose.connection.on('connected', () => {
 })
 
 // Connection fail
-mongoose.connection.on('error', () => {
+mongoose.connection.on('error', (err) => {
     console.error("Error Connecting to Mongo Instance", err)
 })
 
